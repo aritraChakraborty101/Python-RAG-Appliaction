@@ -267,6 +267,10 @@
                     setTimeout(() => {
                         window.location.href = '/api/auth/dashboard';
                     }, 1000);
+                } else if (response.status === 403) {
+                    // Email not verified
+                    const errorMsg = data.message || data.error || 'Email not verified';
+                    showMessage('⚠️ ' + errorMsg, 'error');
                 } else {
                     showMessage('❌ ' + (data.error || 'Login failed'), 'error');
                 }

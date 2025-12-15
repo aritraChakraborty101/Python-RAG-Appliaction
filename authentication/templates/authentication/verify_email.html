@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification - Authentication System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            padding: 50px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        
+        .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        .icon.success {
+            color: #28a745;
+        }
+        
+        .icon.error {
+            color: #dc3545;
+        }
+        
+        .icon.info {
+            color: #17a2b8;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+        
+        .message {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .username {
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 40px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: left;
+            border-radius: 4px;
+        }
+        
+        .info-box p {
+            color: #0c5460;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if status == 'success' %}
+            <div class="icon success">✅</div>
+            <h1>Email Verified!</h1>
+            <p class="message">{{ message }}</p>
+            {% if username %}
+                <div class="username">Welcome, {{ username }}!</div>
+            {% endif %}
+            <a href="/api/auth/login-page" class="btn">Go to Login</a>
+            
+            <div class="info-box">
+                <p><strong>What's next?</strong></p>
+                <p>• Your email has been successfully verified</p>
+                <p>• You can now log in to your account</p>
+                <p>• Enjoy full access to all features!</p>
+            </div>
+        
+        {% elif status == 'already_verified' %}
+            <div class="icon info">ℹ️</div>
+            <h1>Already Verified</h1>
+            <p class="message">{{ message }}</p>
+            {% if username %}
+                <div class="username">{{ username }}</div>
+            {% endif %}
+            <a href="/api/auth/login-page" class="btn">Go to Login</a>
+            
+            <div class="info-box">
+                <p><strong>Good news!</strong></p>
+                <p>• Your email was verified previously</p>
+                <p>• You can log in anytime</p>
+                <p>• No further action needed</p>
+            </div>
+        
+        {% else %}
+            <div class="icon error">❌</div>
+            <h1>Verification Failed</h1>
+            <p class="message">{{ message }}</p>
+            <a href="/api/auth/signup-page" class="btn">Sign Up Again</a>
+            
+            <div class="info-box">
+                <p><strong>Possible reasons:</strong></p>
+                <p>• The verification link may have expired</p>
+                <p>• The link may be invalid or already used</p>
+                <p>• Please try signing up again</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

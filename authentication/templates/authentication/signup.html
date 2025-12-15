@@ -249,8 +249,13 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    showMessage('✅ ' + data.message + ' Check your email for verification!', 'success');
+                    showMessage('✅ Account created! Please check your email to verify your account before logging in.', 'success');
                     form.reset();
+                    
+                    // Redirect to login page after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = '/api/auth/login-page';
+                    }, 3000);
                 } else {
                     // Handle validation errors
                     let errorMessage = '';

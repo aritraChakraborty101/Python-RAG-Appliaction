@@ -1,5 +1,6 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -7,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserRegistrationSerializer
 from .emails import send_verification_email
+from .models import EmailVerification
 
 
 def signup_page(request):
@@ -24,6 +26,37 @@ def dashboard(request):
     return render(request, 'authentication/dashboard.html')
 
 
+def verify_email_page(request, token):
+    """Render email verification result page"""
+    try:
+        verification = EmailVerification.objects.get(verification_token=token)
+        
+        if verification.is_verified:
+            context = {
+                'status': 'already_verified',
+                'message': 'Your email has already been verified!',
+                'username': verification.user.username
+            }
+        else:
+            verification.is_verified = True
+            verification.verified_at = timezone.now()
+            verification.save()
+            
+            context = {
+                'status': 'success',
+                'message': 'Email verified successfully!',
+                'username': verification.user.username
+            }
+    except EmailVerification.DoesNotExist:
+        context = {
+            'status': 'error',
+            'message': 'Invalid or expired verification link.',
+            'username': None
+        }
+    
+    return render(request, 'authentication/verify_email.html', context)
+
+
 @api_view(['POST'])
 def signup(request):
     serializer = UserRegistrationSerializer(data=request.data)
@@ -31,8 +64,11 @@ def signup(request):
     if serializer.is_valid():
         user = serializer.save()
         
+        # Create email verification record
+        verification = EmailVerification.objects.create(user=user)
+        
         # Send verification email asynchronously (non-blocking)
-        send_verification_email(user.username, user.email)
+        send_verification_email(user.username, user.email, verification.verification_token)
         
         return Response(
             {'message': 'User registered successfully'},
@@ -47,6 +83,7 @@ def login(request):
     """
     User login endpoint that returns JWT access and refresh tokens.
     Accepts username and password, validates credentials.
+    Requires email verification before allowing login.
     """
     username = request.data.get('username')
     password = request.data.get('password')
@@ -61,6 +98,29 @@ def login(request):
     user = authenticate(username=username, password=password)
     
     if user is not None:
+        # Check if email is verified
+        try:
+            verification = EmailVerification.objects.get(user=user)
+            if not verification.is_verified:
+                return Response(
+                    {
+                        'error': 'Email not verified',
+                        'message': 'Please verify your email address before logging in. Check your inbox for the verification link.'
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        except EmailVerification.DoesNotExist:
+            # If no verification record exists, create one and send email
+            verification = EmailVerification.objects.create(user=user)
+            send_verification_email(user.username, user.email, verification.verification_token)
+            return Response(
+                {
+                    'error': 'Email not verified',
+                    'message': 'Verification email sent. Please check your inbox.'
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         
@@ -70,7 +130,8 @@ def login(request):
             'user': {
                 'id': user.id,
                 'username': user.username,
-                'email': user.email
+                'email': user.email,
+                'email_verified': verification.is_verified
             }
         }, status=status.HTTP_200_OK)
     
