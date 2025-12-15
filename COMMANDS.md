@@ -34,11 +34,44 @@ curl -X POST http://127.0.0.1:8000/api/auth/signup \
   -d '{"username":"bob","email":"bob@test.com","password":""}'
 ```
 
-### Test via Python Script
+### Test JWT Authentication
 
 ```bash
-# Run automated tests
+# Login to get JWT tokens
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser1","password":"testpass123"}'
+
+# Invalid login
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"wrong","password":"wrong"}'
+
+# Access protected route (will fail - no token)
+curl -X GET http://127.0.0.1:8000/api/auth/chat-history
+
+# Get token and access protected route
+TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser1","password":"testpass123"}' | python3 -c "import sys, json; print(json.load(sys.stdin)['access'])")
+
+curl -X GET http://127.0.0.1:8000/api/auth/chat-history \
+  -H "Authorization: Bearer $TOKEN"
+
+# Refresh token
+curl -X POST http://127.0.0.1:8000/api/auth/token/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refresh":"your_refresh_token_here"}'
+```
+
+### Test via Python Scripts
+
+```bash
+# Run signup tests
 ./venv/bin/python test_signup.py
+
+# Run JWT authentication tests
+./venv/bin/python test_jwt_auth.py
 ```
 
 ## 🗄️ Database Commands

@@ -2,6 +2,48 @@
 
 ## Completed Tickets
 
+### ✅ AUTH-002: JWT Login & Session Management
+
+**Files Created/Modified:**
+- `core/settings.py` - JWT configuration and INSTALLED_APPS
+- `authentication/views.py` - Login endpoint and protected routes
+- `authentication/urls.py` - JWT authentication URLs
+- `test_jwt_auth.py` - Comprehensive JWT tests
+
+**Implementation Details:**
+
+1. **JWT Configuration** (`core/settings.py`):
+   - Added `rest_framework_simplejwt` to `INSTALLED_APPS`
+   - Configured `SIMPLE_JWT` settings with token lifetimes
+   - Access token: 1 hour, Refresh token: 7 days
+   - Set `JWTAuthentication` as default authentication class
+
+2. **Login Endpoint** (`authentication/views.py`):
+   - POST `/api/auth/login` accepts username and password
+   - Validates credentials using Django's `authenticate()`
+   - Returns JWT access and refresh tokens on success
+   - Returns 401 Unauthorized on invalid credentials
+
+3. **Protected Routes**:
+   - `/api/auth/chat-history` - Example protected route with mock data
+   - `/api/auth/protected` - Additional protected route for testing
+   - Both require `Authorization: Bearer <token>` header
+   - Return 401 if token missing or invalid
+
+4. **Token Refresh** (`authentication/urls.py`):
+   - POST `/api/auth/token/refresh` using built-in `TokenRefreshView`
+   - Accepts refresh token, returns new access token
+
+**Acceptance Criteria Met:**
+✅ Valid credentials return 200 OK with access & refresh tokens  
+✅ Invalid credentials return 401 Unauthorized  
+✅ Protected routes reject requests without Bearer token  
+✅ Protected routes accept valid JWT tokens  
+✅ Token refresh endpoint implemented  
+✅ Stateless authentication (no session storage)  
+
+---
+
 ### ✅ AUTH-003: Asynchronous SMTP Email Service
 
 **Files Created/Modified:**

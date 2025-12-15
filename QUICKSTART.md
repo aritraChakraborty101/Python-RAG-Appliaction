@@ -6,28 +6,80 @@ Your Django authentication system is now running at: **http://127.0.0.1:8000/**
 
 ## 🎯 Access Points
 
-1. **Signup Web Interface**: http://127.0.0.1:8000/api/auth/signup-page
-   - Beautiful HTML form for user registration
-   - Real-time validation and feedback
-   - Automatic email sending on successful signup
+### 🌐 Web Pages (Use Your Browser!)
 
-2. **API Endpoint**: http://127.0.0.1:8000/api/auth/signup
-   - Use this for programmatic access
+1. **Home / Login Page**: http://127.0.0.1:8000/
+   - Beautiful login form
+   - Enter username & password
+   - Auto-redirect to dashboard after login
+   - Link to signup page
+
+2. **Dashboard**: http://127.0.0.1:8000/api/auth/dashboard
+   - Personalized landing page
+   - View your account info
+   - Test protected API endpoints
+   - Interactive features (chat history, token refresh)
+   - Logout button
+
+3. **Signup Page**: http://127.0.0.1:8000/api/auth/signup-page
+   - Registration form for new users
+   - Real-time validation
+   - Email verification
+
+### 🔌 API Endpoints (For Programmatic Access)
+
+4. **Signup API**: http://127.0.0.1:8000/api/auth/signup
    - POST JSON with: `username`, `email`, `password`
+   - Returns 201 on success
 
-3. **Django Admin**: http://127.0.0.1:8000/admin
+5. **Login API**: http://127.0.0.1:8000/api/auth/login
+   - POST JSON with: `username`, `password`
+   - Returns JWT access and refresh tokens
+
+6. **Token Refresh**: http://127.0.0.1:8000/api/auth/token/refresh
+   - POST JSON with: `refresh` token
+   - Returns new access token
+
+### 🔒 Protected Routes (Require JWT)
+
+7. **Chat History**: http://127.0.0.1:8000/api/auth/chat-history
+   - GET with `Authorization: Bearer <token>` header
+   - Example protected route
+
+8. **Protected Test**: http://127.0.0.1:8000/api/auth/protected
+   - GET with `Authorization: Bearer <token>` header
+   - Another protected route for testing
+
+### ⚙️ Admin
+
+9. **Django Admin**: http://127.0.0.1:8000/admin
    - View registered users (create superuser first)
 
-## 🚀 Testing the System
+## 🚀 Using the System
+
+### 🎯 Complete User Flow (Recommended)
+
+**For Existing Users:**
+1. Open browser: http://127.0.0.1:8000/
+2. Login with: `testuser1` / `testpass123`
+3. View your personalized dashboard
+4. Test the protected features
+5. Logout when done
+
+**For New Users:**
+1. Open browser: http://127.0.0.1:8000/
+2. Click "Sign up here"
+3. Fill registration form
+4. Submit → Account created!
+5. Go back to login page
+6. Login with your credentials
+7. Access your dashboard
 
 ### Option 1: Web Interface (Easiest)
-1. Open browser to: http://127.0.0.1:8000/api/auth/signup-page
-2. Fill in the form:
-   - Username: `testuser`
-   - Email: `test@example.com`
-   - Password: `mypassword123`
-3. Click "Create Account"
-4. Check for success message!
+1. Open browser to: http://127.0.0.1:8000/
+2. See the login page
+3. Login or signup
+4. Explore the dashboard!
 
 ### Option 2: cURL Command
 ```bash
@@ -102,6 +154,13 @@ Then access: http://127.0.0.1:8000/admin
 - Hashes passwords securely
 - Returns 201 on success, 400 on error
 
+### ✅ AUTH-002: JWT Login & Session Management
+- POST `/api/auth/login` returns JWT access & refresh tokens
+- Stateless authentication (no server sessions)
+- Protected routes require `Authorization: Bearer <token>` header
+- Token refresh endpoint for getting new access tokens
+- Access tokens expire after 1 hour, refresh tokens after 7 days
+
 ### ✅ AUTH-003: Async Email Service
 - Sends verification emails in background thread
 - Non-blocking (API responds immediately)
@@ -134,6 +193,41 @@ curl -X POST http://127.0.0.1:8000/api/auth/signup \
   -d '{"username":"jane","email":"jane@test.com","password":""}'
 ```
 **Expected**: `{"password": ["Password cannot be empty."]}` (400)
+
+### Login with JWT
+```bash
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","password":"pass123"}'
+```
+**Expected**: Returns access and refresh tokens (200)
+
+### Access Protected Route
+```bash
+# First get token
+TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","password":"pass123"}' | python3 -c "import sys, json; print(json.load(sys.stdin)['access'])")
+
+# Use token to access protected route
+curl -X GET http://127.0.0.1:8000/api/auth/chat-history \
+  -H "Authorization: Bearer $TOKEN"
+```
+**Expected**: Returns chat history data (200)
+
+### Refresh Token
+```bash
+curl -X POST http://127.0.0.1:8000/api/auth/token/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refresh":"your_refresh_token_here"}'
+```
+**Expected**: Returns new access token (200)
+
+### Run JWT Tests
+```bash
+./venv/bin/python test_jwt_auth.py
+```
+**Expected**: All 8 tests pass ✅
 
 ## 🛠️ Troubleshooting
 
