@@ -11,14 +11,24 @@ from .emails import send_verification_email
 from .models import EmailVerification
 
 
+def landing_page(request):
+    """Render the landing page"""
+    return render(request, 'authentication/landing.html')
+
+
 def signup_page(request):
     """Render the signup HTML page"""
-    return render(request, 'authentication/signup.html')
+    return render(request, 'authentication/signup_bootstrap.html')
 
 
 def login_page(request):
     """Render the login HTML page"""
-    return render(request, 'authentication/login.html')
+    return render(request, 'authentication/login_bootstrap.html')
+
+
+def profile_page(request):
+    """Render the profile page"""
+    return render(request, 'authentication/profile.html')
 
 
 def dashboard(request):

@@ -1,0 +1,101 @@
+{% extends 'authentication/base.html' %}
+
+{% block title %}Login - AuthSystem{% endblock %}
+
+{% block content %}
+<div class="container p-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card border shadow-sm p-4">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4 fw-bold">Login</h2>
+                    
+                    <div id="message" class="alert alert-dismissible fade" role="alert" style="display: none;">
+                        <span id="messageText"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <form id="loginForm">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                            <label for="username">Username</label>
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                            <label for="password">Password</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-dark w-100 py-2" id="submitBtn">
+                            <span id="buttonText">Login</span>
+                            <span id="spinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="mb-0">Don't have an account? <a href="/api/auth/signup-page" class="text-dark fw-bold">Sign up</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('loginForm');
+    const messageDiv = document.getElementById('message');
+    const messageText = document.getElementById('messageText');
+    const submitBtn = document.getElementById('submitBtn');
+    const buttonText = document.getElementById('buttonText');
+    const spinner = document.getElementById('spinner');
+
+    function showMessage(text, type) {
+        messageText.textContent = text;
+        messageDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        messageDiv.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        };
+        
+        submitBtn.disabled = true;
+        buttonText.textContent = 'Logging in...';
+        spinner.style.display = 'inline-block';
+        messageDiv.style.display = 'none';
+        
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                localStorage.setItem('access_token', data.access);
+                localStorage.setItem('refresh_token', data.refresh);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                showMessage('Login successful! Redirecting...', 'success');
+                setTimeout(() => window.location.href = '/api/auth/profile', 1000);
+            } else if (response.status === 403) {
+                showMessage(data.message || 'Email not verified. Please check your inbox.', 'warning');
+            } else {
+                showMessage(data.error || 'Login failed', 'danger');
+            }
+        } catch (error) {
+            showMessage('Network error. Please try again.', 'danger');
+        } finally {
+            submitBtn.disabled = false;
+            buttonText.textContent = 'Login';
+            spinner.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

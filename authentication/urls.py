@@ -1,11 +1,14 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
-    signup, signup_page, login, login_page, dashboard, 
+    signup, signup_page, login, login_page, dashboard, profile_page, landing_page,
     chat_history, protected_test, verify_email_page
 )
 
 urlpatterns = [
+    # Landing
+    path('landing', landing_page, name='landing'),
+    
     # Registration
     path('signup', signup, name='signup'),
     path('signup-page', signup_page, name='signup_page'),
@@ -16,6 +19,7 @@ urlpatterns = [
     # JWT Authentication
     path('login', login, name='login'),
     path('login-page', login_page, name='login_page'),
+    path('profile', profile_page, name='profile'),
     path('dashboard', dashboard, name='dashboard'),
     path('token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     

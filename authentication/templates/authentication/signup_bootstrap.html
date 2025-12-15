@@ -1,0 +1,110 @@
+{% extends 'authentication/base.html' %}
+
+{% block title %}Sign Up - AuthSystem{% endblock %}
+
+{% block content %}
+<div class="container p-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card border shadow-sm p-4">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4 fw-bold">Sign Up</h2>
+                    
+                    <div id="message" class="alert alert-dismissible fade" role="alert" style="display: none;">
+                        <span id="messageText"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <form id="signupForm">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                            <label for="username">Username</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
+                            <label for="email">Email</label>
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                            <label for="password">Password</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-dark w-100 py-2" id="submitBtn">
+                            <span id="buttonText">Sign Up</span>
+                            <span id="spinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="mb-0">Already have an account? <a href="/api/auth/login-page" class="text-dark fw-bold">Login</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('signupForm');
+    const messageDiv = document.getElementById('message');
+    const messageText = document.getElementById('messageText');
+    const submitBtn = document.getElementById('submitBtn');
+    const buttonText = document.getElementById('buttonText');
+    const spinner = document.getElementById('spinner');
+
+    function showMessage(text, type) {
+        messageText.textContent = text;
+        messageDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        messageDiv.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+            username: document.getElementById('username').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
+        };
+        
+        submitBtn.disabled = true;
+        buttonText.textContent = 'Creating account...';
+        spinner.style.display = 'inline-block';
+        messageDiv.style.display = 'none';
+        
+        try {
+            const response = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showMessage('Account created! Please check your email to verify your account.', 'success');
+                form.reset();
+                setTimeout(() => window.location.href = '/api/auth/login-page', 3000);
+            } else {
+                let errorMessage = '';
+                if (typeof data === 'object') {
+                    errorMessage = Object.entries(data)
+                        .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+                        .join(' | ');
+                } else {
+                    errorMessage = data.message || 'Registration failed';
+                }
+                showMessage(errorMessage, 'danger');
+            }
+        } catch (error) {
+            showMessage('Network error. Please try again.', 'danger');
+        } finally {
+            submitBtn.disabled = false;
+            buttonText.textContent = 'Sign Up';
+            spinner.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

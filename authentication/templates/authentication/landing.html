@@ -1,0 +1,15 @@
+{% extends 'authentication/base.html' %}
+
+{% block title %}Welcome - AuthSystem{% endblock %}
+
+{% block content %}
+<div class="container p-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center p-5">
+            <h1 class="display-3 fw-bold mb-4">Welcome to AuthSystem</h1>
+            <p class="lead mb-5">Secure authentication made simple. Create your account and get started today.</p>
+            <a href="/api/auth/signup-page" class="btn btn-dark btn-lg px-5">Get Started</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
