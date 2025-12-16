@@ -1,13 +1,28 @@
-# Django Authentication System with JWT and SMTP
+# Django RAG Chat Application
 
-This project implements a secure authentication system using Django REST Framework with JWT tokens and asynchronous SMTP email verification.
+A complete full-stack AI chatbot application with secure authentication, RAG (Retrieval-Augmented Generation), multi-chat support, and automated background tasks.
 
 ## Features
 
-- **User Registration (AUTH-001)**: Secure signup endpoint with validation
-- **Asynchronous Email Service (AUTH-003)**: Non-blocking email sending using threading
-- **JWT Authentication**: Token-based authentication for secure API access
-- **SMTP Integration**: Real email service integration (Gmail)
+### 🔐 Authentication & Security
+- **User Registration**: Secure signup with email validation
+- **JWT Authentication**: Token-based secure API access
+- **Email Verification**: Asynchronous SMTP email service
+- **Password Security**: Hashed using Django's built-in methods
+
+### 💬 Chat System
+- **RAG Integration**: AI responses powered by Google Gemini
+- **FAISS Vector Search**: Semantic search over knowledge base
+- **Multi-Chat Support**: Create unlimited conversation threads
+- **Chat History**: Persistent storage with timestamps
+- **Delete Conversations**: Clean up old chats
+
+### ⏰ Background Task Scheduler
+- **Automated Cleanup**: Removes old conversations (30+ days)
+- **Data Integrity**: Cleans orphaned messages
+- **User Management**: Removes inactive unverified users
+- **System Monitoring**: Generates usage statistics
+- **Admin Dashboard**: Web interface for task management
 
 ## Setup Instructions
 
@@ -49,33 +64,32 @@ python manage.py runserver
 
 ## API Endpoints
 
-### User Registration
+### Authentication
+- `POST /api/auth/signup` - User registration
+- `POST /api/auth/login` - JWT token login
+- `GET /api/auth/profile` - Get user profile
+- `GET /api/auth/verify-email/<token>` - Verify email address
 
-**Endpoint:** `POST /api/auth/signup`
+### Chat
+- `POST /api/chat` - Send message (create or continue conversation)
+- `GET /api/chat-history` - Get chat history (legacy)
+- `GET /api/conversations` - List all conversations
+- `GET /api/conversations/<id>` - Get conversation details
+- `DELETE /api/conversations/<id>/delete` - Delete conversation
+- `PUT /api/conversations/<id>/rename` - Rename conversation
 
-**Request Body:**
-```json
-{
-    "username": "johndoe",
-    "email": "john@example.com",
-    "password": "securepassword123"
-}
-```
+### Scheduler (Admin Only)
+- `GET /api/admin/scheduler/status` - Get scheduler status
+- `POST /api/admin/scheduler/trigger` - Manually trigger tasks
+- `GET /api/admin/scheduler/statistics` - Get system statistics
 
-**Success Response (201 Created):**
-```json
-{
-    "message": "User registered successfully"
-}
-```
-
-**Error Response (400 Bad Request):**
-```json
-{
-    "email": ["A user with this email already exists."],
-    "username": ["A user with this username already exists."]
-}
-```
+### Web Pages
+- `/` - Home/Landing page
+- `/api/auth/login` - Login page
+- `/api/auth/signup` - Signup page
+- `/api/auth/profile` - User profile page
+- `/chat-page` - Multi-chat interface
+- `/scheduler-admin` - Scheduler admin dashboard
 
 ## Technical Implementation
 
@@ -119,21 +133,89 @@ http POST localhost:8000/api/auth/signup username=testuser email=test@example.co
 
 ```
 ├── core/
-│   ├── __init__.py
-│   ├── settings.py      # Django settings with SMTP config
-│   ├── urls.py          # Main URL configuration
-│   ├── wsgi.py
-│   └── asgi.py
+│   ├── settings.py           # Django settings
+│   └── urls.py               # Main URL configuration
 ├── authentication/
-│   ├── __init__.py
-│   ├── views.py         # Signup endpoint
-│   ├── serializers.py   # User registration serializer
-│   ├── emails.py        # Asynchronous email service
-│   └── urls.py          # Authentication routes
+│   ├── views.py              # Auth endpoints
+│   ├── serializers.py        # User serializers
+│   ├── emails.py             # Async email service
+│   └── templates/            # Auth HTML pages
+├── chat/
+│   ├── models.py             # Conversation & ChatMessage models
+│   ├── views.py              # Chat endpoints
+│   ├── serializers.py        # Chat serializers
+│   ├── rag_service.py        # RAG + FAISS integration
+│   ├── tasks.py              # Background task definitions
+│   ├── scheduler.py          # APScheduler configuration
+│   ├── management/
+│   │   └── commands/
+│   │       ├── run_housekeeping.py   # Manual task execution
+│   │       └── scheduler_info.py     # View scheduler status
+│   └── templates/
+│       └── chat/
+│           ├── chat_multi.html       # Multi-chat interface
+│           └── scheduler_admin.html  # Admin dashboard
 ├── manage.py
 ├── requirements.txt
-├── .env                 # Environment variables (not in git)
-├── .env.example         # Example environment variables
-├── .gitignore
-└── README.md
+├── knowledge_base.txt        # RAG knowledge base
+├── .env                      # Environment variables
+└── Documentation/
+    ├── QUICKSTART.md         # Quick start guide
+    ├── QUICKSTART-RAG.md     # RAG setup guide
+    ├── QUICKSTART-SCHEDULER.md    # Scheduler quick start
+    └── SCHEDULER-TASKS.md    # Detailed scheduler docs
 ```
+
+## Quick Start Guides
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Complete setup guide
+- **[QUICKSTART-RAG.md](QUICKSTART-RAG.md)** - RAG & AI setup
+- **[QUICKSTART-SCHEDULER.md](QUICKSTART-SCHEDULER.md)** - Scheduler quick start
+- **[SCHEDULER-TASKS.md](SCHEDULER-TASKS.md)** - Detailed scheduler documentation
+
+## Background Task Scheduler
+
+The application includes an automated task scheduler using **APScheduler** that handles:
+
+### Scheduled Tasks
+
+| Task | Schedule | Description |
+|------|----------|-------------|
+| Daily Housekeeping | 2:00 AM daily | Runs all cleanup tasks |
+| Weekly Cleanup | Sunday 3:00 AM | Deletes conversations older than 30 days |
+| Statistics Generation | Every 6 hours | Generates system usage statistics |
+
+### Manual Task Management
+
+```bash
+# View scheduler status
+python manage.py scheduler_info
+
+# Run all housekeeping tasks
+python manage.py run_housekeeping
+
+# Run specific task
+python manage.py run_housekeeping --task conversations
+python manage.py run_housekeeping --task messages
+python manage.py run_housekeeping --task users
+python manage.py run_housekeeping --task stats
+```
+
+### Admin Dashboard
+
+Access the web dashboard at: **http://127.0.0.1:8000/scheduler-admin**
+
+Features:
+- 📊 Live system statistics
+- ⚡ One-click task triggers
+- 📅 View scheduled jobs
+- 🔄 Auto-refresh every 30 seconds
+
+**Requirements**: Admin/superuser account
+
+### Task Definitions
+
+1. **delete_old_conversations()** - Removes conversations older than 30 days
+2. **cleanup_orphaned_messages()** - Removes messages not associated with conversations
+3. **cleanup_inactive_users()** - Removes unverified users after 7 days
+4. **generate_statistics()** - Tracks users, conversations, messages, and activity

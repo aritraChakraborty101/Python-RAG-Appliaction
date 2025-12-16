@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from .models import ChatMessage, Conversation
 from .serializers import (
@@ -11,11 +11,24 @@ from .serializers import (
     ConversationDetailSerializer
 )
 from .rag_service import get_rag_service
+from .scheduler import get_scheduled_jobs, run_job_now
+from .tasks import (
+    run_all_housekeeping_tasks,
+    delete_old_conversations,
+    cleanup_orphaned_messages,
+    cleanup_inactive_users,
+    generate_statistics
+)
 
 
 def chat_page(request):
     """Render the chat interface"""
     return render(request, 'chat/chat_multi.html')
+
+
+def scheduler_admin_page(request):
+    """Render the scheduler admin interface"""
+    return render(request, 'chat/scheduler_admin.html')
 
 
 @api_view(['POST'])
@@ -168,3 +181,102 @@ def chat_history(request):
         'count': messages.count(),
         'messages': serializer.data
     }, status=status.HTTP_200_OK)
+
+
+# Admin-only scheduler management endpoints
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def scheduler_status(request):
+    """
+    Get scheduler status and list of scheduled jobs (Admin only)
+    
+    GET /admin/scheduler/status
+    Returns: Scheduler information and job list
+    """
+    jobs = get_scheduled_jobs()
+    return Response({
+        'status': 'running' if jobs else 'not_running',
+        'total_jobs': len(jobs),
+        'jobs': jobs
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def trigger_task(request):
+    """
+    Manually trigger a housekeeping task (Admin only)
+    
+    POST /admin/scheduler/trigger
+    Body: {"task": "all|conversations|messages|users|stats"}
+    Returns: Task result
+    """
+    task_name = request.data.get('task', 'all')
+    
+    try:
+        if task_name == 'all':
+            result = run_all_housekeeping_tasks()
+            return Response({
+                'message': 'All housekeeping tasks completed',
+                'result': result
+            }, status=status.HTTP_200_OK)
+        
+        elif task_name == 'conversations':
+            count = delete_old_conversations()
+            return Response({
+                'message': f'Deleted {count} old conversations',
+                'deleted_count': count
+            }, status=status.HTTP_200_OK)
+        
+        elif task_name == 'messages':
+            count = cleanup_orphaned_messages()
+            return Response({
+                'message': f'Cleaned {count} orphaned messages',
+                'cleaned_count': count
+            }, status=status.HTTP_200_OK)
+        
+        elif task_name == 'users':
+            count = cleanup_inactive_users()
+            return Response({
+                'message': f'Deleted {count} inactive users',
+                'deleted_count': count
+            }, status=status.HTTP_200_OK)
+        
+        elif task_name == 'stats':
+            stats = generate_statistics()
+            return Response({
+                'message': 'Statistics generated',
+                'statistics': stats
+            }, status=status.HTTP_200_OK)
+        
+        else:
+            return Response(
+                {'error': 'Invalid task name. Choose: all, conversations, messages, users, or stats'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    except Exception as e:
+        return Response(
+            {'error': f'Task failed: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def system_statistics(request):
+    """
+    Get current system statistics (Admin only)
+    
+    GET /admin/scheduler/statistics
+    Returns: System usage statistics
+    """
+    try:
+        stats = generate_statistics()
+        return Response(stats, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': f'Failed to generate statistics: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

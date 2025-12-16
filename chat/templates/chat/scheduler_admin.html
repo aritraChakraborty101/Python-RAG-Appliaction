@@ -1,0 +1,364 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduler Admin - Django RAG Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #ffffff;
+            min-height: 100vh;
+        }
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .card-header {
+            background-color: #212529;
+            color: white;
+            font-weight: 600;
+            padding: 15px 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .job-item {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            transition: background-color 0.2s;
+        }
+        .job-item:last-child {
+            border-bottom: none;
+        }
+        .job-item:hover {
+            background-color: #f8f9fa;
+        }
+        .badge-custom {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        .task-btn {
+            margin: 5px;
+        }
+        .alert-custom {
+            border-left: 4px solid #28a745;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.15em;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="{% url 'landing_page' %}">
+                <i class="bi bi-robot"></i> Django RAG Chat
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'landing_page' %}">
+                    <i class="bi bi-house-door"></i> Home
+                </a>
+                <a class="nav-link" href="{% url 'chat_page' %}">
+                    <i class="bi bi-chat-dots"></i> Chat
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="bi bi-calendar-check"></i> Scheduler Administration
+            </h1>
+            <p class="text-muted">Monitor and manage background tasks</p>
+        </div>
+
+        <!-- Alert Area -->
+        <div id="alertArea"></div>
+
+        <!-- Statistics Section -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="bi bi-people fs-2"></i>
+                    <div class="stat-value" id="totalUsers">-</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <i class="bi bi-chat-square-text fs-2"></i>
+                    <div class="stat-value" id="totalConversations">-</div>
+                    <div class="stat-label">Conversations</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <i class="bi bi-chat-left-dots fs-2"></i>
+                    <div class="stat-value" id="totalMessages">-</div>
+                    <div class="stat-label">Total Messages</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <i class="bi bi-clock-history fs-2"></i>
+                    <div class="stat-value" id="recentMessages24h">-</div>
+                    <div class="stat-label">Last 24h Messages</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Task Triggers -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightning-charge"></i> Manual Task Triggers
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Manually trigger housekeeping tasks</p>
+                <div class="d-flex flex-wrap">
+                    <button class="btn btn-dark task-btn" onclick="triggerTask('all')">
+                        <i class="bi bi-gear"></i> Run All Tasks
+                    </button>
+                    <button class="btn btn-outline-dark task-btn" onclick="triggerTask('conversations')">
+                        <i class="bi bi-trash"></i> Delete Old Conversations
+                    </button>
+                    <button class="btn btn-outline-dark task-btn" onclick="triggerTask('messages')">
+                        <i class="bi bi-eraser"></i> Cleanup Orphaned Messages
+                    </button>
+                    <button class="btn btn-outline-dark task-btn" onclick="triggerTask('users')">
+                        <i class="bi bi-person-x"></i> Remove Inactive Users
+                    </button>
+                    <button class="btn btn-outline-dark task-btn" onclick="triggerTask('stats')">
+                        <i class="bi bi-bar-chart"></i> Generate Statistics
+                    </button>
+                </div>
+                <div class="loading mt-3" id="taskLoading">
+                    <div class="spinner-border text-dark" role="status"></div>
+                    <p class="mt-2">Running task...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scheduler Status -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Scheduler Status
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> <span id="schedulerStatus" class="badge badge-custom bg-success">Running</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Total Jobs:</strong> <span id="totalJobs">-</span></p>
+                    </div>
+                </div>
+                <button class="btn btn-dark btn-sm" onclick="refreshSchedulerStatus()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Scheduled Jobs -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-list-task"></i> Scheduled Jobs
+            </div>
+            <div class="card-body p-0">
+                <div id="jobsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Get JWT token from localStorage
+        const token = localStorage.getItem('access_token');
+        
+        if (!token) {
+            window.location.href = '/api/auth/login';
+        }
+
+        const API_BASE = '/api';
+
+        // Show alert message
+        function showAlert(message, type = 'success') {
+            const alertArea = document.getElementById('alertArea');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertArea.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Fetch scheduler status
+        async function fetchSchedulerStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/scheduler/status`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.status === 403) {
+                    showAlert('Access denied. Admin privileges required.', 'danger');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                document.getElementById('schedulerStatus').textContent = data.status.toUpperCase();
+                document.getElementById('schedulerStatus').className = 
+                    data.status === 'running' ? 'badge badge-custom bg-success' : 'badge badge-custom bg-danger';
+                document.getElementById('totalJobs').textContent = data.total_jobs;
+                
+                renderJobs(data.jobs);
+            } catch (error) {
+                console.error('Error fetching scheduler status:', error);
+                showAlert('Failed to fetch scheduler status', 'danger');
+            }
+        }
+
+        // Render scheduled jobs
+        function renderJobs(jobs) {
+            const jobsList = document.getElementById('jobsList');
+            
+            if (jobs.length === 0) {
+                jobsList.innerHTML = '<p class="text-center text-muted p-4">No scheduled jobs found</p>';
+                return;
+            }
+            
+            jobsList.innerHTML = jobs.map(job => `
+                <div class="job-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h6 class="mb-1"><i class="bi bi-clock"></i> ${job.name}</h6>
+                            <small class="text-muted">ID: ${job.id}</small>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <p class="mb-0"><strong>Next Run:</strong></p>
+                            <small>${job.next_run_time || 'Not scheduled'}</small>
+                            <br>
+                            <small class="text-muted">${job.trigger}</small>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Fetch system statistics
+        async function fetchStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/scheduler/statistics`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    document.getElementById('totalUsers').textContent = data.total_users || 0;
+                    document.getElementById('totalConversations').textContent = data.total_conversations || 0;
+                    document.getElementById('totalMessages').textContent = data.total_messages || 0;
+                    document.getElementById('recentMessages24h').textContent = data.recent_messages_24h || 0;
+                }
+            } catch (error) {
+                console.error('Error fetching statistics:', error);
+            }
+        }
+
+        // Trigger manual task
+        async function triggerTask(taskName) {
+            const taskLoading = document.getElementById('taskLoading');
+            taskLoading.style.display = 'block';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/scheduler/trigger`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ task: taskName })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert(data.message, 'success');
+                    // Refresh statistics after task completion
+                    setTimeout(() => {
+                        fetchStatistics();
+                    }, 1000);
+                } else {
+                    showAlert(data.error || 'Task failed', 'danger');
+                }
+            } catch (error) {
+                console.error('Error triggering task:', error);
+                showAlert('Failed to trigger task', 'danger');
+            } finally {
+                taskLoading.style.display = 'none';
+            }
+        }
+
+        // Refresh scheduler status
+        function refreshSchedulerStatus() {
+            fetchSchedulerStatus();
+            fetchStatistics();
+            showAlert('Status refreshed', 'info');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchSchedulerStatus();
+            fetchStatistics();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                fetchSchedulerStatus();
+                fetchStatistics();
+            }, 30000);
+        });
+    </script>
+</body>
+</html>
