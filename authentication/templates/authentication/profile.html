@@ -4,6 +4,15 @@
 
 {% block nav_items %}
 <li class="nav-item">
+    <a class="nav-link" href="/">Home</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/chat-page">Chat</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="/api/auth/profile">Profile</a>
+</li>
+<li class="nav-item">
     <a class="nav-link" href="#" onclick="logout(); return false;">Logout</a>
 </li>
 {% endblock %}

@@ -1,0 +1,367 @@
+{% extends "authentication/base.html" %}
+
+{% block title %}AI Chat - Django RAG{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link" href="/">Home</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="/chat-page">Chat</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/api/auth/profile">Profile</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="#" onclick="logout()">Logout</a>
+</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: 70vh;
+        overflow-y: auto;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        background-color: #fafafa;
+        margin-bottom: 20px;
+    }
+    
+    .message {
+        margin-bottom: 15px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+    
+    .message.user {
+        background-color: #000000;
+        color: #ffffff;
+        margin-left: auto;
+        text-align: right;
+    }
+    
+    .message.ai {
+        background-color: #ffffff;
+        color: #000000;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .message-label {
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .message-text {
+        line-height: 1.5;
+    }
+    
+    .message-time {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        margin-top: 5px;
+    }
+    
+    .input-area {
+        position: relative;
+    }
+    
+    .loading {
+        display: none;
+        text-align: center;
+        padding: 10px;
+        color: #666;
+    }
+    
+    .loading.show {
+        display: block;
+    }
+    
+    .error-message {
+        background-color: #ffebee;
+        color: #c62828;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        display: none;
+    }
+    
+    .error-message.show {
+        display: block;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5 fw-bold">AI Chat Assistant</h1>
+                <p class="lead">Ask me anything about Django, Python, and Web Development</p>
+            </div>
+            
+            <!-- Error Message -->
+            <div id="error-message" class="error-message"></div>
+            
+            <!-- Chat Container -->
+            <div id="chat-container" class="chat-container">
+                <div class="empty-state" id="empty-state">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">💬</div>
+                    <h5>Start a conversation</h5>
+                    <p>Ask questions about Django, REST APIs, Python, and more!</p>
+                </div>
+            </div>
+            
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading">
+                <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <span class="ms-2">AI is thinking...</span>
+            </div>
+            
+            <!-- Input Area -->
+            <div class="input-area">
+                <form id="chat-form" class="d-flex gap-2">
+                    <input 
+                        type="text" 
+                        id="message-input" 
+                        class="form-control form-control-lg" 
+                        placeholder="Type your message here..."
+                        required
+                        autocomplete="off"
+                    >
+                    <button type="submit" class="btn btn-dark btn-lg px-4">
+                        Send
+                    </button>
+                </form>
+                <div class="mt-2 text-muted small text-center">
+                    <span id="message-count">0</span> messages in history
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Get JWT token from localStorage
+    const token = localStorage.getItem('access_token');
+    
+    // If no token, redirect to login
+    if (!token) {
+        alert('Please login first');
+        window.location.href = '/api/auth/login-page';
+    }
+    
+    // DOM Elements
+    const chatContainer = document.getElementById('chat-container');
+    const emptyState = document.getElementById('empty-state');
+    const messageInput = document.getElementById('message-input');
+    const chatForm = document.getElementById('chat-form');
+    const loading = document.getElementById('loading');
+    const errorMessage = document.getElementById('error-message');
+    const messageCount = document.getElementById('message-count');
+    
+    // Load chat history on page load
+    window.addEventListener('DOMContentLoaded', loadChatHistory);
+    
+    // Handle form submission
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const message = messageInput.value.trim();
+        if (!message) return;
+        
+        // Clear input
+        messageInput.value = '';
+        
+        // Hide error
+        errorMessage.classList.remove('show');
+        
+        // Add user message to UI
+        addMessage(message, 'user');
+        
+        // Show loading
+        loading.classList.add('show');
+        
+        try {
+            // Send to API
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ message: message })
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('Session expired. Please login again.');
+                }
+                throw new Error('Failed to get response');
+            }
+            
+            const data = await response.json();
+            
+            // Add AI response to UI
+            addMessage(data.ai_response, 'ai', data.timestamp);
+            
+            // Update message count
+            updateMessageCount();
+            
+        } catch (error) {
+            console.error('Error:', error);
+            showError(error.message);
+            
+            if (error.message.includes('login')) {
+                setTimeout(() => {
+                    window.location.href = '/api/auth/login-page';
+                }, 2000);
+            }
+        } finally {
+            // Hide loading
+            loading.classList.remove('show');
+        }
+    });
+    
+    // Load chat history
+    async function loadChatHistory() {
+        try {
+            const response = await fetch('/api/chat-history?limit=50', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/api/auth/login-page';
+                    return;
+                }
+                throw new Error('Failed to load history');
+            }
+            
+            const data = await response.json();
+            
+            if (data.messages && data.messages.length > 0) {
+                // Hide empty state
+                emptyState.style.display = 'none';
+                
+                // Display messages (reverse to show oldest first)
+                data.messages.reverse().forEach(msg => {
+                    addMessage(msg.user_message, 'user', msg.timestamp, false);
+                    addMessage(msg.ai_response, 'ai', msg.timestamp, false);
+                });
+                
+                // Scroll to bottom
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            // Update count
+            updateMessageCount(data.count);
+            
+        } catch (error) {
+            console.error('Error loading history:', error);
+        }
+    }
+    
+    // Add message to chat
+    function addMessage(text, type, timestamp = null, scroll = true) {
+        // Hide empty state
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        
+        const label = document.createElement('div');
+        label.className = 'message-label';
+        label.textContent = type === 'user' ? 'You' : 'AI Assistant';
+        
+        const textDiv = document.createElement('div');
+        textDiv.className = 'message-text';
+        textDiv.textContent = text;
+        
+        messageDiv.appendChild(label);
+        messageDiv.appendChild(textDiv);
+        
+        if (timestamp) {
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = new Date(timestamp).toLocaleString();
+            messageDiv.appendChild(timeDiv);
+        }
+        
+        chatContainer.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        if (scroll) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    }
+    
+    // Show error message
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.add('show');
+        
+        setTimeout(() => {
+            errorMessage.classList.remove('show');
+        }, 5000);
+    }
+    
+    // Update message count
+    async function updateMessageCount(count = null) {
+        if (count !== null) {
+            messageCount.textContent = count;
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/chat-history?limit=1', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                messageCount.textContent = data.count;
+            }
+        } catch (error) {
+            console.error('Error updating count:', error);
+        }
+    }
+    
+    // Logout function
+    function logout() {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/api/auth/login-page';
+    }
+    
+    // Focus input on load
+    messageInput.focus();
+</script>
+{% endblock %}

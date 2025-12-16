@@ -33,13 +33,16 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="/">AuthSystem</a>
+            <a class="navbar-brand fw-bold" href="/">Django RAG Chat</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     {% block nav_items %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/api/auth/login-page">Login</a>
                     </li>

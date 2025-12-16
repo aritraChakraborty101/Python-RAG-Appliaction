@@ -263,9 +263,9 @@
                     
                     showMessage('✅ Login successful! Redirecting...', 'success');
                     
-                    // Redirect to dashboard after 1 second
+                    // Redirect to chat page after 1 second
                     setTimeout(() => {
-                        window.location.href = '/api/auth/dashboard';
+                        window.location.href = '/chat-page';
                     }, 1000);
                 } else if (response.status === 403) {
                     // Email not verified

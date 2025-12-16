@@ -1,15 +1,81 @@
 {% extends 'authentication/base.html' %}
 
-{% block title %}Welcome - AuthSystem{% endblock %}
+{% block title %}Welcome - Django RAG Chat{% endblock %}
 
 {% block content %}
 <div class="container p-5">
     <div class="row justify-content-center">
-        <div class="col-lg-8 text-center p-5">
-            <h1 class="display-3 fw-bold mb-4">Welcome to AuthSystem</h1>
-            <p class="lead mb-5">Secure authentication made simple. Create your account and get started today.</p>
-            <a href="/api/auth/signup-page" class="btn btn-dark btn-lg px-5">Get Started</a>
+        <div class="col-lg-10 text-center p-5">
+            <!-- Hero Section -->
+            <div class="mb-5">
+                <div style="font-size: 6rem; margin-bottom: 20px;">🤖</div>
+                <h1 class="display-3 fw-bold mb-4">AI-Powered Chat Assistant</h1>
+                <p class="lead mb-4">Ask questions about Django, Python, Web Development, and more!</p>
+                <p class="text-muted mb-5">Powered by RAG (Retrieval-Augmented Generation) and Google Gemini AI</p>
+            </div>
+            
+            <!-- CTA Buttons -->
+            <div class="d-flex gap-3 justify-content-center flex-wrap mb-5">
+                <a href="/chat-page" class="btn btn-dark btn-lg px-5">
+                    💬 Start Chatting
+                </a>
+                <a href="/api/auth/signup-page" class="btn btn-outline-dark btn-lg px-5">
+                    Get Started
+                </a>
+            </div>
+            
+            <!-- Features -->
+            <div class="row mt-5 text-start">
+                <div class="col-md-4 mb-4">
+                    <div class="p-4 border rounded">
+                        <h4 class="mb-3">🔒 Secure Authentication</h4>
+                        <p class="text-muted">JWT-based authentication with email verification for secure access.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="p-4 border rounded">
+                        <h4 class="mb-3">🧠 Smart AI Responses</h4>
+                        <p class="text-muted">RAG technology retrieves relevant context for accurate answers.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="p-4 border rounded">
+                        <h4 class="mb-3">💾 Chat History</h4>
+                        <p class="text-muted">All conversations saved and accessible anytime.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Topics -->
+            <div class="mt-5 p-4 bg-light rounded">
+                <h5 class="mb-3">Topics I Can Help With:</h5>
+                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                    <span class="badge bg-dark">Django</span>
+                    <span class="badge bg-dark">Django REST Framework</span>
+                    <span class="badge bg-dark">Python</span>
+                    <span class="badge bg-dark">Web Development</span>
+                    <span class="badge bg-dark">RESTful APIs</span>
+                    <span class="badge bg-dark">Database & ORM</span>
+                    <span class="badge bg-dark">Authentication</span>
+                    <span class="badge bg-dark">Testing</span>
+                    <span class="badge bg-dark">Deployment</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Check if user is logged in
+    const token = localStorage.getItem('access_token');
+    if (token) {
+        // Update button text if logged in
+        const chatButton = document.querySelector('a[href="/chat-page"]');
+        if (chatButton) {
+            chatButton.innerHTML = '💬 Continue Chatting';
+        }
+    }
+</script>
 {% endblock %}
