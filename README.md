@@ -2,220 +2,182 @@
 
 A complete full-stack AI chatbot application with secure authentication, RAG (Retrieval-Augmented Generation), multi-chat support, and automated background tasks.
 
-## Features
+## 📚 Documentation
+
+- **[SETUP.md](SETUP.md)** - Complete installation and setup guide
+- **[FEATURES.md](FEATURES.md)** - Detailed feature documentation
+- **[API.md](API.md)** - Complete API reference
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development guidelines and technical details
+
+## ✨ Features Overview
 
 ### 🔐 Authentication & Security
-- **User Registration**: Secure signup with email validation
-- **JWT Authentication**: Token-based secure API access
-- **Email Verification**: Asynchronous SMTP email service
-- **Password Security**: Hashed using Django's built-in methods
+- User registration with email verification
+- JWT token-based authentication
+- Asynchronous SMTP email service
+- Secure password hashing
 
-### 💬 Chat System
-- **RAG Integration**: AI responses powered by Google Gemini
-- **FAISS Vector Search**: Semantic search over knowledge base
-- **Multi-Chat Support**: Create unlimited conversation threads
-- **Chat History**: Persistent storage with timestamps
-- **Delete Conversations**: Clean up old chats
+### 💬 AI Chat System
+- RAG-powered AI responses (Google Gemini)
+- FAISS vector search for semantic retrieval
+- Multi-conversation support
+- Persistent chat history with timestamps
+- Response latency tracking
 
 ### ⏰ Background Task Scheduler
-- **Automated Cleanup**: Removes old conversations (30+ days)
-- **Data Integrity**: Cleans orphaned messages
-- **User Management**: Removes inactive unverified users
-- **System Monitoring**: Generates usage statistics
-- **Admin Dashboard**: Web interface for task management
+- Automated cleanup of old conversations (30+ days)
+- Data integrity maintenance
+- User management (inactive/unverified cleanup)
+- System statistics generation
+- Web-based admin dashboard
 
-## Setup Instructions
+### 🎨 User Interface
+- Bootstrap 5 minimal white theme
+- Responsive design
+- Multi-chat interface with sidebar
+- Real-time message updates
+- Profile management
 
-### 1. Install Dependencies
+## 🚀 Quick Start
+
+### 1. Clone and Setup
 
 ```bash
+git clone <repository-url>
+cd Python-RAG-Appliaction
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment Variables
-
-Copy `.env.example` to `.env` and update with your credentials:
+### 2. Configure Environment
 
 ```bash
 cp .env.example .env
+# Edit .env with your credentials:
+# - EMAIL_HOST_USER (Gmail)
+# - EMAIL_HOST_PASSWORD (App Password)
+# - GEMINI_API_KEY (Google AI)
 ```
 
-Edit `.env` file:
-- `EMAIL_HOST_USER`: Your Gmail address
-- `EMAIL_HOST_PASSWORD`: Your Gmail App Password (not regular password)
-
-**To generate Gmail App Password:**
-1. Go to Google Account settings
-2. Enable 2-Factor Authentication
-3. Go to Security > App passwords
-4. Generate a new app password for "Mail"
-
-### 3. Run Migrations
+### 3. Initialize Database
 
 ```bash
 python manage.py migrate
+python manage.py createsuperuser  # Optional but recommended
 ```
 
-### 4. Start Development Server
+### 4. Run Server
 
 ```bash
 python manage.py runserver
 ```
 
-## API Endpoints
+Visit: **http://127.0.0.1:8000**
+
+## 📖 Documentation Structure
+
+### For Users
+- **[SETUP.md](SETUP.md)** - Installation, configuration, and troubleshooting
+- **[FEATURES.md](FEATURES.md)** - Feature descriptions and usage guides
+- **[API.md](API.md)** - API endpoints, request/response examples
+
+### For Developers
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Architecture, code style, deployment
+- **[API.md](API.md)** - Technical API specifications
+- **[FEATURES.md](FEATURES.md)** - Implementation details
+
+## 🔧 Key Technologies
+
+- **Backend:** Django 4.2+, Django REST Framework
+- **Authentication:** JWT (djangorestframework-simplejwt)
+- **AI/ML:** Google Gemini, SentenceTransformers, FAISS
+- **Task Scheduling:** APScheduler
+- **Frontend:** Bootstrap 5, Vanilla JavaScript
+- **Email:** Gmail SMTP (async with threading)
+
+## 📊 Project Structure
+
+```
+Python-RAG-Appliaction/
+├── authentication/        # User auth & email verification
+├── chat/                  # Chat, RAG, and scheduler
+├── core/                  # Django settings & root URLs
+├── manage.py              # Django management
+├── requirements.txt       # Python dependencies
+├── knowledge_base.txt     # RAG knowledge base
+├── .env                   # Environment variables (not in git)
+└── Documentation/
+    ├── README.md          # This file
+    ├── SETUP.md           # Setup guide
+    ├── FEATURES.md        # Feature documentation
+    ├── API.md             # API reference
+    └── DEVELOPMENT.md     # Development guide
+```
+
+## 🔑 Quick Commands
+
+```bash
+# Run server
+python manage.py runserver
+
+# View scheduler status
+python manage.py scheduler_info
+
+# Run housekeeping tasks
+python manage.py run_housekeeping
+
+# Create superuser
+python manage.py createsuperuser
+
+# Django shell
+python manage.py shell
+```
+
+## 🌐 Web Interface
+
+- **Home:** http://127.0.0.1:8000/
+- **Signup:** http://127.0.0.1:8000/api/auth/signup
+- **Login:** http://127.0.0.1:8000/api/auth/login
+- **Profile:** http://127.0.0.1:8000/api/auth/profile
+- **Chat:** http://127.0.0.1:8000/chat-page
+- **Scheduler Admin:** http://127.0.0.1:8000/scheduler-admin (superuser)
+
+## 📝 API Endpoints
 
 ### Authentication
-- `POST /api/auth/signup` - User registration
-- `POST /api/auth/login` - JWT token login
+- `POST /api/auth/signup` - Register new user
+- `POST /api/auth/login` - Login and get JWT tokens
 - `GET /api/auth/profile` - Get user profile
-- `GET /api/auth/verify-email/<token>` - Verify email address
+- `GET /api/auth/verify-email/<token>` - Verify email
 
 ### Chat
-- `POST /api/chat` - Send message (create or continue conversation)
-- `GET /api/chat-history` - Get chat history (legacy)
-- `GET /api/conversations` - List all conversations
+- `POST /api/chat` - Send message
+- `GET /api/conversations` - List conversations
 - `GET /api/conversations/<id>` - Get conversation details
 - `DELETE /api/conversations/<id>/delete` - Delete conversation
 - `PUT /api/conversations/<id>/rename` - Rename conversation
 
-### Scheduler (Admin Only)
-- `GET /api/admin/scheduler/status` - Get scheduler status
-- `POST /api/admin/scheduler/trigger` - Manually trigger tasks
-- `GET /api/admin/scheduler/statistics` - Get system statistics
+### Admin (Scheduler)
+- `GET /api/admin/scheduler/status` - Scheduler status
+- `POST /api/admin/scheduler/trigger` - Trigger tasks
+- `GET /api/admin/scheduler/statistics` - System stats
 
-### Web Pages
-- `/` - Home/Landing page
-- `/api/auth/login` - Login page
-- `/api/auth/signup` - Signup page
-- `/api/auth/profile` - User profile page
-- `/chat-page` - Multi-chat interface
-- `/scheduler-admin` - Scheduler admin dashboard
+**See [API.md](API.md) for complete API documentation.**
 
-## Technical Implementation
+## 🛡️ Security
 
-### AUTH-001: User Registration Logic
+- Passwords hashed with PBKDF2
+- JWT token authentication
+- Email verification required
+- Environment variables for secrets
+- User data isolation
+- CSRF protection
 
-- **File**: `authentication/views.py`, `authentication/serializers.py`
-- **Validation**: Checks for unique email/username and non-empty password
-- **Security**: Passwords hashed using Django's `create_user` method
-- **Integration**: Calls asynchronous email service without blocking response
+## 📄 License
 
-### AUTH-003: Asynchronous SMTP Email Service
+This project is for educational and assessment purposes.
 
-- **File**: `authentication/emails.py`
-- **Implementation**: Uses `threading.Thread` to send emails in background
-- **Configuration**: SMTP settings loaded from `.env` via `python-dotenv`
-- **Security**: Credentials stored in environment variables, not in code
+## 🤝 Contributing
 
-## Security Features
-
-- Passwords hashed using Django's built-in password hasher (PBKDF2)
-- SMTP credentials stored in `.env` file (excluded from version control)
-- Email and username uniqueness validation
-- Non-empty password validation
-- JWT token support for future authentication endpoints
-
-## Testing the Signup Endpoint
-
-Using curl:
-```bash
-curl -X POST http://localhost:8000/api/auth/signup \
-  -H "Content-Type: application/json" \
-  -d '{"username":"testuser","email":"test@example.com","password":"testpass123"}'
-```
-
-Using HTTPie:
-```bash
-http POST localhost:8000/api/auth/signup username=testuser email=test@example.com password=testpass123
-```
-
-## Project Structure
-
-```
-├── core/
-│   ├── settings.py           # Django settings
-│   └── urls.py               # Main URL configuration
-├── authentication/
-│   ├── views.py              # Auth endpoints
-│   ├── serializers.py        # User serializers
-│   ├── emails.py             # Async email service
-│   └── templates/            # Auth HTML pages
-├── chat/
-│   ├── models.py             # Conversation & ChatMessage models
-│   ├── views.py              # Chat endpoints
-│   ├── serializers.py        # Chat serializers
-│   ├── rag_service.py        # RAG + FAISS integration
-│   ├── tasks.py              # Background task definitions
-│   ├── scheduler.py          # APScheduler configuration
-│   ├── management/
-│   │   └── commands/
-│   │       ├── run_housekeeping.py   # Manual task execution
-│   │       └── scheduler_info.py     # View scheduler status
-│   └── templates/
-│       └── chat/
-│           ├── chat_multi.html       # Multi-chat interface
-│           └── scheduler_admin.html  # Admin dashboard
-├── manage.py
-├── requirements.txt
-├── knowledge_base.txt        # RAG knowledge base
-├── .env                      # Environment variables
-└── Documentation/
-    ├── QUICKSTART.md         # Quick start guide
-    ├── QUICKSTART-RAG.md     # RAG setup guide
-    ├── QUICKSTART-SCHEDULER.md    # Scheduler quick start
-    └── SCHEDULER-TASKS.md    # Detailed scheduler docs
-```
-
-## Quick Start Guides
-
-- **[QUICKSTART.md](QUICKSTART.md)** - Complete setup guide
-- **[QUICKSTART-RAG.md](QUICKSTART-RAG.md)** - RAG & AI setup
-- **[QUICKSTART-SCHEDULER.md](QUICKSTART-SCHEDULER.md)** - Scheduler quick start
-- **[SCHEDULER-TASKS.md](SCHEDULER-TASKS.md)** - Detailed scheduler documentation
-
-## Background Task Scheduler
-
-The application includes an automated task scheduler using **APScheduler** that handles:
-
-### Scheduled Tasks
-
-| Task | Schedule | Description |
-|------|----------|-------------|
-| Daily Housekeeping | 2:00 AM daily | Runs all cleanup tasks |
-| Weekly Cleanup | Sunday 3:00 AM | Deletes conversations older than 30 days |
-| Statistics Generation | Every 6 hours | Generates system usage statistics |
-
-### Manual Task Management
-
-```bash
-# View scheduler status
-python manage.py scheduler_info
-
-# Run all housekeeping tasks
-python manage.py run_housekeeping
-
-# Run specific task
-python manage.py run_housekeeping --task conversations
-python manage.py run_housekeeping --task messages
-python manage.py run_housekeeping --task users
-python manage.py run_housekeeping --task stats
-```
-
-### Admin Dashboard
-
-Access the web dashboard at: **http://127.0.0.1:8000/scheduler-admin**
-
-Features:
-- 📊 Live system statistics
-- ⚡ One-click task triggers
-- 📅 View scheduled jobs
-- 🔄 Auto-refresh every 30 seconds
-
-**Requirements**: Admin/superuser account
-
-### Task Definitions
-
-1. **delete_old_conversations()** - Removes conversations older than 30 days
-2. **cleanup_orphaned_messages()** - Removes messages not associated with conversations
-3. **cleanup_inactive_users()** - Removes unverified users after 7 days
-4. **generate_statistics()** - Tracks users, conversations, messages, and activity
+See [DEVELOPMENT.md](DEVELOPMENT.md) for contribution guidelines.
