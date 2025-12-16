@@ -2,19 +2,50 @@
 
 Complete API documentation for all endpoints in the Django RAG Chat Application.
 
+---
+
+## 📋 Table of Contents
+
+- [Base URL](#base-url)
+- [Authentication](#authentication)
+- [Authentication Endpoints](#authentication-endpoints)
+- [Chat Endpoints](#chat-endpoints)
+- [Scheduler Endpoints](#scheduler-endpoints-admin-only)
+- [Web Pages](#web-pages-html)
+- [Error Codes](#error-codes)
+- [Rate Limiting](#rate-limiting)
+- [Testing with cURL](#testing-with-curl)
+
+---
+
 ## Base URL
 
 ```
 http://127.0.0.1:8000
 ```
 
+**Production**: Replace with your production domain (e.g., `https://api.yourdomain.com`)
+
+---
+
 ## Authentication
 
-Most endpoints require JWT authentication. Include the token in the Authorization header:
+Most endpoints require **JWT (JSON Web Token)** authentication. Include the access token in the Authorization header:
 
 ```
 Authorization: Bearer <access_token>
 ```
+
+### Token Lifecycle
+- **Access Token**: Valid for 60 minutes
+- **Refresh Token**: Valid for 1 day
+- **Refresh Endpoint**: Use refresh token to get new access token (if needed)
+
+### How to Get Token
+1. Login via `/api/auth/login` with valid credentials
+2. Receive `access` and `refresh` tokens in response
+3. Use `access` token in subsequent requests
+4. When access token expires, use refresh token to get new one
 
 ---
 
@@ -477,6 +508,8 @@ Authorization: Bearer <access_token>
 
 ---
 
+---
+
 ## Web Pages (HTML)
 
 ### Authentication Pages
@@ -489,6 +522,8 @@ Authorization: Bearer <access_token>
 - `GET /` - Home page (redirects based on auth status)
 - `GET /chat-page` - Multi-chat interface
 - `GET /scheduler-admin` - Scheduler admin dashboard (superuser only)
+
+---
 
 ---
 
@@ -506,12 +541,16 @@ Authorization: Bearer <access_token>
 
 ---
 
+---
+
 ## Rate Limiting
 
 Currently, no rate limiting is implemented. For production, consider:
 - Django-ratelimit
 - API throttling in DRF
 - NGINX rate limiting
+
+---
 
 ---
 
@@ -544,3 +583,43 @@ curl -X POST http://127.0.0.1:8000/api/chat \
 curl -X GET http://127.0.0.1:8000/api/conversations \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
+
+### Delete Conversation
+```bash
+curl -X DELETE http://127.0.0.1:8000/api/conversations/5/delete \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### Rename Conversation
+```bash
+curl -X PUT http://127.0.0.1:8000/api/conversations/5/rename \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{"title":"My New Title"}'
+```
+
+---
+
+## API Best Practices
+
+### Request Guidelines
+- Always include `Content-Type: application/json` header for POST/PUT requests
+- Use proper HTTP methods (GET, POST, PUT, DELETE)
+- Include JWT token for protected endpoints
+- Handle token expiry gracefully (refresh or re-login)
+
+### Response Handling
+- Check HTTP status code before processing response
+- Handle errors appropriately (show user-friendly messages)
+- Parse JSON responses safely
+- Implement retry logic for transient failures
+
+### Security
+- Never expose JWT tokens in URLs or logs
+- Store tokens securely (localStorage/sessionStorage)
+- Use HTTPS in production
+- Implement CSRF protection for state-changing operations
+
+---
+
+**For implementation examples, see the frontend JavaScript code in templates.**

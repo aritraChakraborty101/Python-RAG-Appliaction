@@ -1,6 +1,24 @@
 # Development Guide
 
-Guidelines and technical details for developers working on the Django RAG Chat Application.
+Technical guidelines, architecture details, and development workflow for the Django RAG Chat Application.
+
+---
+
+## 📋 Table of Contents
+
+- [Project Structure](#project-structure)
+- [Technology Stack](#technology-stack)
+- [Database Models](#database-models)
+- [Key Implementation Details](#key-implementation-details)
+- [Development Workflow](#development-workflow)
+- [Code Style Guidelines](#code-style-guidelines)
+- [Security Best Practices](#security-best-practices)
+- [Performance Optimization](#performance-optimization)
+- [Testing Guidelines](#testing-guidelines)
+- [Deployment Checklist](#deployment-checklist)
+- [Useful Commands](#useful-commands)
+
+---
 
 ## Project Structure
 
@@ -56,9 +74,11 @@ Python-RAG-Appliaction/
     └── DEVELOPMENT.md            # This file
 ```
 
+---
+
 ## Technology Stack
 
-### Backend
+### Backend Frameworks
 - **Framework:** Django 4.2+
 - **API:** Django REST Framework
 - **Authentication:** djangorestframework-simplejwt
@@ -78,6 +98,8 @@ Python-RAG-Appliaction/
 ### Email
 - **Service:** Gmail SMTP
 - **Implementation:** Threading-based async
+
+---
 
 ## Database Models
 
@@ -113,6 +135,8 @@ class ChatMessage(models.Model):
     ai_response = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 ```
+
+---
 
 ## Key Implementation Details
 
@@ -224,6 +248,8 @@ scheduler.start()
 - Click to switch conversations
 - Auto-load messages for active conversation
 
+---
+
 ## Development Workflow
 
 ### Adding a New Feature
@@ -332,6 +358,8 @@ logger.info("Debug message")
 - Watch server output while making requests
 - Check for errors, warnings, SQL queries
 
+---
+
 ## Code Style Guidelines
 
 ### Python (PEP 8)
@@ -352,6 +380,8 @@ logger.info("Debug message")
 - Bootstrap classes for styling
 - Minimal custom CSS
 - Mobile-first responsive design
+
+---
 
 ## Security Best Practices
 
@@ -376,6 +406,8 @@ logger.info("Debug message")
 - Validate foreign keys
 - User isolation (filter by request.user)
 
+---
+
 ## Performance Optimization
 
 ### 1. Database
@@ -395,6 +427,98 @@ logger.info("Debug message")
 - Lazy load conversations
 - Debounce search inputs
 
+---
+
+## Testing Guidelines
+
+### Manual Testing
+
+Test all endpoints using curl or Postman:
+
+```bash
+# Test signup
+curl -X POST http://127.0.0.1:8000/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","email":"test@test.com","password":"testpass123"}'
+
+# Test login
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"testpass123"}'
+
+# Test chat (with token)
+curl -X POST http://127.0.0.1:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"message":"What is Django?"}'
+```
+
+### Python Shell Testing
+
+```bash
+python manage.py shell
+```
+
+```python
+from django.contrib.auth.models import User
+from chat.models import Conversation, ChatMessage
+
+# Test user creation
+user = User.objects.create_user('testuser', 'test@test.com', 'password123')
+print(f"Created user: {user.username}")
+
+# Test conversation creation
+conv = Conversation.objects.create(user=user, title='Test Conversation')
+print(f"Created conversation: {conv.title}")
+
+# Test message creation
+msg = ChatMessage.objects.create(
+    conversation=conv,
+    user_message='Hello AI',
+    ai_response='Hello! How can I help you?'
+)
+print(f"Created message: {msg.id}")
+
+# Verify data
+print(f"User conversations: {user.conversation_set.count()}")
+print(f"Conversation messages: {conv.chatmessage_set.count()}")
+```
+
+### Integration Testing
+
+Test the RAG service:
+
+```bash
+python manage.py shell
+```
+
+```python
+from chat.rag_service import get_rag_service
+
+# Initialize RAG service
+rag = get_rag_service()
+rag.initialize()
+
+# Test query
+response = rag.get_response("What is Python?")
+print(f"AI Response: {response}")
+```
+
+### Test Scheduler
+
+```bash
+# Check scheduler status
+python manage.py scheduler_info
+
+# Run manual task
+python manage.py run_housekeeping --task stats
+
+# Check if tasks are logged
+tail -f nohup.out  # Or check server output
+```
+
+---
+
 ## Deployment Checklist
 
 - [ ] Set `DEBUG = False`
@@ -410,7 +534,11 @@ logger.info("Debug message")
 - [ ] Configure email backend for production
 - [ ] Set up monitoring (Uptime checks)
 
+---
+
 ## Useful Commands
+
+### Django Management
 
 ```bash
 # Create superuser
@@ -442,6 +570,44 @@ python manage.py startapp app_name
 python manage.py dbshell
 ```
 
+### Git Commands
+
+```bash
+# Check status
+git status
+
+# Create branch
+git checkout -b feature/feature-name
+
+# Commit changes
+git add .
+git commit -m "Description of changes"
+
+# Push to remote
+git push origin feature/feature-name
+
+# View logs
+git log --oneline --graph
+```
+
+### Database Commands
+
+```bash
+# Django shell
+python manage.py shell
+
+# Database shell
+python manage.py dbshell
+
+# Show migrations
+python manage.py showmigrations
+
+# SQL for migration
+python manage.py sqlmigrate app_name migration_number
+```
+
+---
+
 ## Troubleshooting Common Issues
 
 ### Issue: Migrations out of sync
@@ -467,19 +633,50 @@ python manage.py collectstatic --clear
 - Verify Gemini API key in `.env`
 - Check terminal for errors
 
+---
+
 ## Contributing
 
-1. Fork the repository
-2. Create feature branch
-3. Make changes
-4. Test thoroughly
-5. Submit pull request
-6. Wait for review
+### Contribution Workflow
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make your changes**: Follow code style guidelines
+4. **Test thoroughly**: Manual and automated tests
+5. **Commit**: `git commit -m "Add amazing feature"`
+6. **Push**: `git push origin feature/amazing-feature`
+7. **Submit Pull Request**: Describe changes clearly
+8. **Wait for review**: Address feedback if needed
+
+### Pull Request Guidelines
+
+- **Clear Description**: Explain what and why
+- **Small Changes**: Keep PRs focused and reviewable
+- **Tests**: Include tests for new features
+- **Documentation**: Update docs if needed
+- **Code Style**: Follow project conventions
+
+---
 
 ## Resources
 
+### Official Documentation
 - [Django Documentation](https://docs.djangoproject.com/)
-- [DRF Documentation](https://www.django-rest-framework.org/)
+- [Django REST Framework](https://www.django-rest-framework.org/)
 - [FAISS Documentation](https://faiss.ai/)
 - [APScheduler Documentation](https://apscheduler.readthedocs.io/)
 - [Bootstrap 5 Documentation](https://getbootstrap.com/docs/5.0/)
+
+### AI & ML Resources
+- [Google Gemini API](https://ai.google.dev/docs)
+- [SentenceTransformers](https://www.sbert.net/)
+- [Hugging Face Models](https://huggingface.co/models)
+
+### Python Resources
+- [PEP 8 Style Guide](https://peps.python.org/pep-0008/)
+- [Python Documentation](https://docs.python.org/3/)
+- [Virtual Environments](https://docs.python.org/3/library/venv.html)
+
+---
+
+**Happy Coding! 🚀**
