@@ -4,6 +4,22 @@ A production-ready, full-stack AI chatbot application featuring secure JWT authe
 
 ---
 
+## 📸 Screenshots
+
+### Landing Page
+![Landing Page](screenshots/landing-page.png)
+*Clean and modern landing page with quick access to chat functionality*
+
+### Chat Interface
+![Chat Interface](screenshots/chat-interface.png)
+*Multi-conversation management with real-time AI responses and latency tracking*
+
+### User Profile
+![User Profile](screenshots/user-profile.png)
+*User profile with account information and authentication management*
+
+
+
 ## 📋 Table of Contents
 
 - [Project Overview](#-project-overview)
