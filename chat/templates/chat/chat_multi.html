@@ -184,6 +184,36 @@
         margin-top: 0.5rem;
     }
     
+    .message-latency {
+        font-size: 0.7rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .latency-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        background: #e9ecef;
+        border-radius: 4px;
+        margin-right: 4px;
+    }
+    
+    .latency-fast {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .latency-medium {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .latency-slow {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
     .chat-input-area {
         padding: 1.5rem;
         background: white;
@@ -490,6 +520,9 @@
         addMessageToUI(message, 'user');
         messageInput.value = '';
         
+        // Start measuring round-trip time
+        const clientStartTime = performance.now();
+        
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
@@ -503,6 +536,9 @@
                 })
             });
             
+            const clientEndTime = performance.now();
+            const roundTripTime = clientEndTime - clientStartTime;
+            
             if (response.status === 401) {
                 window.location.href = '/api/auth/login-page';
                 return;
@@ -511,19 +547,23 @@
             const data = await response.json();
             
             if (response.ok) {
-                // Add AI response to UI
-                addMessageToUI(data.ai_response, 'ai');
+                // Add AI response to UI with latency info
+                addMessageToUI(data.ai_response, 'ai', {
+                    server: data.latency,
+                    roundTrip: roundTripTime
+                });
                 
                 // Update current conversation ID if new
                 if (!currentConversationId) {
                     currentConversationId = data.conversation_id;
                 }
                 
-                // Reload conversations list
+                // Reload conversations list to update sidebar
                 await loadConversations();
                 
-                // Reload current conversation to update header
-                await loadConversation(currentConversationId);
+                // Update message count in header without reloading messages
+                const currentCount = parseInt(messageCount.textContent.split(' ')[0]);
+                messageCount.textContent = `${currentCount + 1} messages`;
                 
             } else {
                 showError(data.error || 'Failed to send message');
@@ -542,13 +582,37 @@
     }
     
     // Add message to UI
-    function addMessageToUI(message, type) {
+    function addMessageToUI(message, type, latency = null) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message-bubble message-${type}`;
+        
+        let latencyHtml = '';
+        if (latency && type === 'ai') {
+            const serverTime = latency.server.total_ms;
+            const roundTrip = latency.roundTrip;
+            const networkTime = roundTrip - serverTime;
+            
+            // Determine speed class
+            let speedClass = 'latency-fast';
+            if (roundTrip > 3000) speedClass = 'latency-slow';
+            else if (roundTrip > 1500) speedClass = 'latency-medium';
+            
+            latencyHtml = `
+                <div class="message-latency">
+                    <span class="latency-badge ${speedClass}">⚡ ${Math.round(roundTrip)}ms total</span>
+                    <span class="latency-badge">🔧 ${Math.round(serverTime)}ms server</span>
+                    <span class="latency-badge">🌐 ${Math.round(networkTime)}ms network</span>
+                    <br>
+                    <small>RAG: ${latency.server.rag_processing_ms}ms | DB: ${latency.server.database_ms}ms</small>
+                </div>
+            `;
+        }
+        
         messageDiv.innerHTML = `
             <div class="message-label">${type === 'user' ? 'You' : 'AI Assistant'}</div>
             <div class="message-content">${escapeHtml(message)}</div>
             <div class="message-time">Just now</div>
+            ${latencyHtml}
         `;
         
         // Remove empty state if exists

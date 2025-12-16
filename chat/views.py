@@ -19,6 +19,7 @@ from .tasks import (
     cleanup_inactive_users,
     generate_statistics
 )
+import time
 
 
 def chat_page(request):
@@ -39,8 +40,10 @@ def chat(request):
     
     POST /chat
     Body: {"message": "user question", "conversation_id": 1 (optional)}
-    Returns: {"user_message": "...", "ai_response": "...", "timestamp": "...", "conversation_id": 1}
+    Returns: {"user_message": "...", "ai_response": "...", "timestamp": "...", "conversation_id": 1, "latency": {...}}
     """
+    start_time = time.time()
+    
     serializer = ChatRequestSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -50,6 +53,7 @@ def chat(request):
     
     try:
         # Get or create conversation
+        conversation_start = time.time()
         if conversation_id:
             conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
         else:
@@ -59,23 +63,40 @@ def chat(request):
                 user=request.user,
                 title=title
             )
+        conversation_time = time.time() - conversation_start
         
         # Get RAG service and generate response
+        rag_start = time.time()
         rag_service = get_rag_service()
         ai_response = rag_service.get_response(user_message)
+        rag_time = time.time() - rag_start
         
         # Save to database
+        db_start = time.time()
         chat_message = ChatMessage.objects.create(
             conversation=conversation,
             user=request.user,
             user_message=user_message,
             ai_response=ai_response
         )
+        db_time = time.time() - db_start
         
-        # Return response
+        total_time = time.time() - start_time
+        
+        # Return response with latency metrics
         response_serializer = ChatMessageSerializer(chat_message)
         data = response_serializer.data
         data['conversation_id'] = conversation.id
+        data['latency'] = {
+            'total_ms': round(total_time * 1000, 2),
+            'rag_processing_ms': round(rag_time * 1000, 2),
+            'database_ms': round((conversation_time + db_time) * 1000, 2),
+            'breakdown': {
+                'conversation_setup_ms': round(conversation_time * 1000, 2),
+                'rag_query_ms': round(rag_time * 1000, 2),
+                'database_save_ms': round(db_time * 1000, 2)
+            }
+        }
         return Response(data, status=status.HTTP_201_CREATED)
         
     except Exception as e:
