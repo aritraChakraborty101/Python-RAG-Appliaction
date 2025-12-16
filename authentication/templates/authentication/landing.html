@@ -2,6 +2,27 @@
 
 {% block title %}Welcome - Django RAG Chat{% endblock %}
 
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link active" href="/">Home</a>
+</li>
+<li class="nav-item" id="nav-chat" style="display: none;">
+    <a class="nav-link" href="/chat-page">Chat</a>
+</li>
+<li class="nav-item" id="nav-profile" style="display: none;">
+    <a class="nav-link" href="/api/auth/profile">Profile</a>
+</li>
+<li class="nav-item" id="nav-login">
+    <a class="nav-link" href="/api/auth/login-page">Login</a>
+</li>
+<li class="nav-item" id="nav-signup">
+    <a class="nav-link" href="/api/auth/signup-page">Signup</a>
+</li>
+<li class="nav-item" id="nav-logout" style="display: none;">
+    <a class="nav-link" href="#" onclick="logout()">Logout</a>
+</li>
+{% endblock %}
+
 {% block content %}
 <div class="container p-5">
     <div class="row justify-content-center">
@@ -70,12 +91,36 @@
 <script>
     // Check if user is logged in
     const token = localStorage.getItem('access_token');
+    
+    // Update navbar based on login state
     if (token) {
-        // Update button text if logged in
+        // User is logged in - show logged in nav items
+        document.getElementById('nav-chat').style.display = 'block';
+        document.getElementById('nav-profile').style.display = 'block';
+        document.getElementById('nav-logout').style.display = 'block';
+        document.getElementById('nav-login').style.display = 'none';
+        document.getElementById('nav-signup').style.display = 'none';
+        
+        // Update button text
         const chatButton = document.querySelector('a[href="/chat-page"]');
         if (chatButton) {
             chatButton.innerHTML = '💬 Continue Chatting';
         }
+    } else {
+        // User is not logged in - show public nav items
+        document.getElementById('nav-chat').style.display = 'none';
+        document.getElementById('nav-profile').style.display = 'none';
+        document.getElementById('nav-logout').style.display = 'none';
+        document.getElementById('nav-login').style.display = 'block';
+        document.getElementById('nav-signup').style.display = 'block';
+    }
+    
+    // Logout function
+    function logout() {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        window.location.href = '/api/auth/login-page';
     }
 </script>
 {% endblock %}
