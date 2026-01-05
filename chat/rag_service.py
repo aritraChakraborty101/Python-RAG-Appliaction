@@ -59,7 +59,7 @@ class RAGService:
         else:
             print("⚠️  Using simple keyword search (FAISS not available)")
         
-        # Configure Gemini API
+            # Configure Gemini API
         if GEMINI_AVAILABLE:
             api_key = os.getenv('GEMINI_API_KEY')
             if api_key:
